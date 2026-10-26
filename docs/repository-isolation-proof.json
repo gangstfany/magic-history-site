@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "test": "Modify APWH content and run its complete independent build; homepage/account tracked file fingerprints must not change.",
+  "before": {
+    "magic-history-site": "01f2d094944bdb1793dadf8b66f7b04e9c162100fc1b518ae4b90e5ec8b9db8f",
+    "magic-history-auth": "6d1e73b2638e1ded83131be4fca5573fbcbc7aff1ffa75ac606cb0f8707f9325"
+  },
+  "after": {
+    "magic-history-site": "01f2d094944bdb1793dadf8b66f7b04e9c162100fc1b518ae4b90e5ec8b9db8f",
+    "magic-history-auth": "6d1e73b2638e1ded83131be4fca5573fbcbc7aff1ffa75ac606cb0f8707f9325"
+  },
+  "restoredWorldClean": true
+}
