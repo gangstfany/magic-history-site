@@ -1,0 +1,43 @@
+name: Deploy homepage framework
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - id: account
+        run: |
+          python3 -c "import json,re; v=json.load(open('auth-release.json'))['commit']; assert re.fullmatch('[a-f0-9]{40}',v); print('sha='+v)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: gangstfany/magic-history-auth
+          ref: ${{ steps.account.outputs.sha }}
+          path: _auth
+      - run: node --test tests/*.test.mjs
+      - run: python3 scripts/build.py --auth-dir _auth
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

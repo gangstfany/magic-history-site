@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "modules": {
+    "world": {
+      "module": "apwh",
+      "url": "../magic-history-apwh/",
+      "title": "World History"
+    },
+    "art": {
+      "module": "art",
+      "url": "../magic-history-art/art-history-map.html?embed=1",
+      "title": "Art History"
+    }
+  },
+  "usHistoryUrl": "https://gangstfany.github.io/magic-history/apush-map.html"
+}
