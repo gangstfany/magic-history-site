@@ -18,3 +18,12 @@ test('invalid course URL config fails safely instead of escaping the click handl
  assert.equal(courseURL('javascript:alert(1)','https://example.com/site/'),null);
  assert.equal(courseURL('../magic-history-apwh/','https://example.com/site/').href,'https://example.com/magic-history-apwh/');
 });
+test('art detail documents can grow naturally while other course height limits stay unchanged',()=>{
+ assert.equal(safeHeight(2424,'art'),2424);
+ assert.equal(safeHeight(99999,'art'),10000);
+ assert.equal(safeHeight(2424,'apwh'),2200);
+ assert.equal(safeHeight(2424),2200);
+ assert.equal(safeHeight(Infinity,'art'),null);
+ assert.equal(safeHeight('2424','art'),null);
+ assert.equal(safeHeight(-20,'art'),280);
+});

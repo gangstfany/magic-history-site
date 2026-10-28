@@ -60,7 +60,7 @@ addEventListener('message',event=>{
    state.ready=true;state.failed=false;clearTimeout(state.timer);if(active===key)setStatus('');
   }
   if(!state.ready)return;
-  const height=safeHeight(event.data.height);if(height!==null)state.frame.style.height=height+'px';
+  const height=safeHeight(event.data.height,state.module);if(height!==null)state.frame.style.height=height+'px';
   if(key==='world'&&event.data.type==='today-pick')renderPick(event.data.pick);
   return;
  }
