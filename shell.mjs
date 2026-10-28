@@ -23,6 +23,8 @@ function start(key,reload=false){
  const url=courseURL(spec.url,location.href);
  if(!url){setStatus('课程地址配置无效。',true);return;}
  url.searchParams.set('hostOrigin',location.origin);
+ // Revalidate independently deployed art HTML on each fresh load; subject switches retain state.
+ if(key==='art')url.searchParams.set('load',String(Date.now()));
  const frame=frames[key];
  state={frame,url,origin:url.origin,module:spec.module,ready:false,failed:false,timer:null};states.set(key,state);
  state.timer=setTimeout(()=>{state.failed=true;if(active===key)setStatus('课程暂时未能载入，首页仍可正常使用。',true);},15000);
