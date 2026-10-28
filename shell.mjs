@@ -74,7 +74,7 @@ document.querySelectorAll('.lang').forEach(el=>el.addEventListener('click',()=>{
 document.querySelectorAll('.navlinks li,.subject-item,.back-link,.feature-clickable,.subj-pill,.today-pick').forEach(el=>{el.tabIndex=0;el.setAttribute('role','button');el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click();}});});
 async function boot(){try{
  bootFailed=false;setStatus('正在加载课程…');
- const response=await fetch('modules.json');if(!response.ok)throw Error('config');
+ const response=await fetch('modules.json',{cache:'no-cache'});if(!response.ok)throw Error('config');
  config=await response.json();if(config.schemaVersion!==1||config.modules?.world?.module!=='apwh'||config.modules?.art?.module!=='art')throw Error('version');
  const us=new URL(config.usHistoryUrl,location.href);if(us.protocol!=='https:')throw Error('us-url');
  selectSubject(active);
