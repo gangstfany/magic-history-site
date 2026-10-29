@@ -711,6 +711,7 @@ nav.topnav {
       <div class="wordmark">MAGIC<span class="light">HISTORY</span></div>
       <div class="nav-right">
         <button type="button" class="account-trigger" data-account-trigger aria-haspopup="dialog">登录 / 注册</button>
+        <button type="button" id="favoritesTrigger" class="favorites-trigger" aria-haspopup="dialog">☆ 收藏 <span id="favoritesCount">0</span></button>
         <ul class="navlinks">
           <li data-view="home" class="active">Home</li>
           <li data-nav-scroll="home-map-embed">Maps</li>
@@ -744,7 +745,7 @@ nav.topnav {
 
       <div class="subject-switcher" id="subjectSwitcher">
         <span class="subj-pill active" data-subj="world" style="--pdot:var(--gold)" role="button" tabindex="0" aria-pressed="true"><span class="dot"></span>World History</span>
-        <span class="subj-pill" data-subj="euro" style="--pdot:var(--sage)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>Euro History <span class="soon">soon</span></span>
+        <span class="subj-pill" data-subj="euro" style="--pdot:var(--sage)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>Euro History</span>
         <span class="subj-pill" data-subj="us" style="--pdot:var(--pink)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>US History <span class="soon">独立页面</span></span>
         <span class="subj-pill" data-subj="geo" style="--pdot:var(--blue)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>Human Geo <span class="soon">soon</span></span>
         <span class="subj-pill" data-subj="art" style="--pdot:var(--terracotta)" role="button" tabindex="0" aria-pressed="false"><span class="dot"></span>Art History</span>
@@ -753,6 +754,7 @@ nav.topnav {
       <section class="course-slot" id="home-map-embed" aria-label="课程工作区">
         <div class="module-status" id="moduleStatus" role="status"><span id="moduleMessage">正在加载课程…</span><button type="button" id="retryModule" hidden>重试加载</button></div>
         <iframe id="worldCourseFrame" title="World History 完整学习模块"></iframe>
+        <iframe id="euroCourseFrame" title="Euro History 完整学习模块" hidden></iframe>
         <iframe id="artCourseFrame" title="Art History 完整学习模块" hidden></iframe>
         <div id="courseComingSoon" hidden><h2 id="courseComingTitle"></h2><p id="courseComingDescription"></p><a id="usHistoryLink" target="_blank" rel="noopener">打开美国史独立地图 →</a></div>
       </section>
@@ -767,7 +769,7 @@ nav.topnav {
         </div>
         <div class="feature feature-clickable" data-goto="subjects">
           <h2>More subjects coming</h2>
-          <p>World History 与 Art History 可在本站切换，US History 提供独立地图入口；其他学科正在制作。</p>
+          <p>World History、Euro History 与 Art History 可在本站切换，US History 提供独立地图入口；其他学科正在制作。</p>
         </div>
         <div class="feature">
           <h2>CED-aligned categories</h2>
@@ -790,7 +792,7 @@ nav.topnav {
           </li>
           <li class="subject-item" data-subject="euro">
             <span class="name">Euro History</span>
-            <span class="tag" style="background:var(--sage-soft)">Coming soon</span>
+            <span class="tag" style="background:var(--sage-soft)">Live</span>
             <span class="arrow">→</span>
           </li>
           <li class="subject-item" data-subject="us">
@@ -839,4 +841,5 @@ nav.topnav {
   </div>
 </div>
 
-<script type="module" src="shell.mjs?v=20261028-fresh-art"></script></body></html>
+<dialog id="favoritesDialog" class="favorites-dialog" aria-labelledby="favoritesTitle"><div class="favorites-dialog-head"><div><p class="favorites-eyebrow">YOUR COLLECTION</p><h2 id="favoritesTitle">我的收藏</h2></div><button type="button" id="favoritesClose" aria-label="关闭收藏">✕</button></div><div class="favorites-filters"><label>学科<select id="favoritesCourse"><option value="">全部学科</option><option value="apwh">World History</option><option value="apeuro">Euro History</option><option value="art">Art History</option></select></label><label>搜索<input id="favoritesSearch" type="search" placeholder="标题、地点或关键词"></label></div><p id="favoritesStorage" class="favorites-storage"></p><p id="favoritesResult" role="status" aria-live="polite"></p><div id="favoritesList" class="favorites-list"></div></dialog><p id="favoritesToast" role="status" class="favorites-toast" hidden></p>
+<script type="module" src="shell.mjs?v=20261029-shared-favorites"></script></body></html>

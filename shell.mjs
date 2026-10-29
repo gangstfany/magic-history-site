@@ -1,3 +1,5 @@
+import {createFavoritesStore,favoriteKey} from './favorites.mjs';
+import {mountFavoritesUI} from './favorites-ui.mjs';
 import {message,trustedEvent,safeHeight,courseURL} from './module-protocol.mjs';
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const scrollMap=()=>document.getElementById('home-map-embed').scrollIntoView({block:'start',behavior:reduceMotion.matches?'auto':'smooth'});
@@ -13,7 +15,16 @@ document.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click'
 document.querySelectorAll('[data-scroll]').forEach(el=>el.addEventListener('click',scrollMap));
 let active='world',config,bootFailed=false;
 const states=new Map();
-const frames={world:$('worldCourseFrame'),art:$('artCourseFrame')};
+const frames={world:$('worldCourseFrame'),euro:$('euroCourseFrame'),art:$('artCourseFrame')};
+let favoriteStorage;try{favoriteStorage=localStorage;}catch{}
+const favorites=createFavoritesStore(favoriteStorage);
+const favoriteUI=mountFavoritesUI(favorites,{openItem:openFavorite});
+let toastTimer;
+function favoriteToast(text){$('favoritesToast').textContent=text;$('favoritesToast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('favoritesToast').hidden=true,5000);}
+function sendFavorites(state){state.frame.contentWindow.postMessage(message(state.module,'favorites-sync',{items:favorites.forCourse(state.module)}),state.origin);}
+function dispatchFavorite(state){if(!state.ready||!state.pendingFavorite)return;const item=state.pendingFavorite;state.frame.contentWindow.postMessage(message(state.module,'open-favorite',{item:{id:item.id,kind:item.kind}}),state.origin);}
+function openFavorite(item){const key={apwh:'world',apeuro:'euro',art:'art'}[item.course];if(!key||!config){favoriteToast('课程正在初始化，请稍后重试。');return;}showView('home');selectSubject(key);const state=states.get(key);if(!state){favoriteToast('这门课程暂时无法打开。');return;}state.pendingFavorite=item;dispatchFavorite(state);scrollMap();}
+favorites.subscribe(()=>{for(const state of states.values())if(state.ready)sendFavorites(state);});
 function setStatus(text,retry=false){$('moduleStatus').hidden=!text;$('moduleMessage').textContent=text;$('retryModule').hidden=!retry;}
 function start(key,reload=false){
  const spec=config?.modules?.[key];if(!spec)return;
@@ -23,12 +34,12 @@ function start(key,reload=false){
  const url=courseURL(spec.url,location.href);
  if(!url){setStatus('课程地址配置无效。',true);return;}
  url.searchParams.set('hostOrigin',location.origin);
- // Revalidate independently deployed art HTML on each fresh load; subject switches retain state.
- if(key==='art')url.searchParams.set('load',String(Date.now()));
+ // Revalidate each independent course on a fresh load; switching retains existing frames.
+ url.searchParams.set('load',String(Date.now()));
  const frame=frames[key];
- state={frame,url,origin:url.origin,module:spec.module,ready:false,failed:false,timer:null};states.set(key,state);
+ state={frame,url,origin:url.origin,module:spec.module,ready:false,failed:false,timer:null,pendingFavorite:state?.pendingFavorite||null};states.set(key,state);
  state.timer=setTimeout(()=>{state.failed=true;if(active===key)setStatus('课程暂时未能载入，首页仍可正常使用。',true);},15000);
- frame.onload=()=>frame.contentWindow.postMessage(message(spec.module,'init'),url.origin);
+ frame.onload=()=>frame.contentWindow.postMessage(message(spec.module,'init',{favorites:favorites.forCourse(spec.module)}),url.origin);
  frame.src=url.href;setStatus('正在加载课程…');
 }
 function selectSubject(key){
@@ -57,11 +68,23 @@ function renderPick(data){
 }
 addEventListener('message',event=>{
  for(const [key,state]of states){
-  if(!trustedEvent(event,state.frame.contentWindow,state.origin,state.module,['ready','resize','today-pick']))continue;
+  if(!trustedEvent(event,state.frame.contentWindow,state.origin,state.module,['ready','resize','today-pick','favorites-import','favorite-change','favorite-opened']))continue;
   if(event.data.type==='ready'){
-   state.ready=true;state.failed=false;clearTimeout(state.timer);if(active===key)setStatus('');
+   state.ready=true;state.failed=false;clearTimeout(state.timer);if(active===key)setStatus('');sendFavorites(state);dispatchFavorite(state);
   }
+  if(event.data.type==='favorites-import'){favorites.import(state.module,event.data.items);return;}
   if(!state.ready)return;
+  if(event.data.type==='favorite-change'){
+   const {action,item}=event.data;
+   if(action==='add'){if(!favorites.add(state.module,item)){sendFavorites(state);favoriteToast('这条收藏未能保存，请重新打开内容后再试。');}}
+   else if(action==='remove'&&item&&typeof item.id==='string'&&typeof item.kind==='string'){favorites.remove(favoriteKey(state.module,item));sendFavorites(state);}
+   return;
+  }
+  if(event.data.type==='favorite-opened'){
+   const target=state.pendingFavorite;
+   if(target&&target.id===event.data.id&&target.kind===event.data.kind){state.pendingFavorite=null;favoriteToast(event.data.ok===true?'已打开收藏内容。':'这条内容可能已调整，可从当前课程继续查找。');}
+   return;
+  }
   const height=safeHeight(event.data.height,state.module);if(height!==null)state.frame.style.height=height+'px';
   if(key==='world'&&event.data.type==='today-pick')renderPick(event.data.pick);
   return;
@@ -77,7 +100,7 @@ document.querySelectorAll('.navlinks li,.subject-item,.back-link,.feature-clicka
 async function boot(){try{
  bootFailed=false;setStatus('正在加载课程…');
  const response=await fetch('modules.json',{cache:'no-cache'});if(!response.ok)throw Error('config');
- config=await response.json();if(config.schemaVersion!==1||config.modules?.world?.module!=='apwh'||config.modules?.art?.module!=='art')throw Error('version');
+ config=await response.json();if(config.schemaVersion!==1||config.modules?.world?.module!=='apwh'||config.modules?.art?.module!=='art'||config.modules?.euro?.module!=='apeuro')throw Error('version');
  const us=new URL(config.usHistoryUrl,location.href);if(us.protocol!=='https:')throw Error('us-url');
  selectSubject(active);
 }catch{bootFailed=true;setStatus('课程配置暂时未能载入，请重试。',true);}}

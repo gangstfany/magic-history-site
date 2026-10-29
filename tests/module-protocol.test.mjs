@@ -27,3 +27,5 @@ test('art detail documents can grow naturally while other course height limits s
  assert.equal(safeHeight('2424','art'),null);
  assert.equal(safeHeight(-20,'art'),280);
 });
+
+test('Euro natural-flow workspace is bounded independently from existing course heights',()=>{assert.equal(safeHeight(12000,'apeuro'),12000);assert.equal(safeHeight(999999,'apeuro'),30000);assert.equal(safeHeight(12000,'apwh'),2200);assert.equal(safeHeight(12000,'art'),10000);});

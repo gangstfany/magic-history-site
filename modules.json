@@ -10,6 +10,11 @@
       "module": "art",
       "url": "../magic-history-art/art-history-map.html?embed=1",
       "title": "Art History"
+    },
+    "euro": {
+      "module": "apeuro",
+      "url": "../magic-history-apeuro/",
+      "title": "Euro History"
     }
   },
   "usHistoryUrl": "https://gangstfany.github.io/magic-history/apush-map.html"
