@@ -723,8 +723,8 @@ nav.topnav {
         <div class="lang-switch">
           <button type="button" class="lang active" data-lang="zh" aria-current="true">中文</button>
           <span class="lang-sep" aria-hidden="true">/</span>
-          <button type="button" class="lang" data-lang="en" aria-label="EN — English version coming soon" title="English version coming soon">EN · Soon</button>
-          <div class="lang-hint" id="langHint" role="status">English version coming soon</div>
+          <button type="button" class="lang" data-lang="en" aria-label="Switch to English" title="English">EN</button>
+          <div class="lang-hint" id="langHint" role="status" hidden></div>
         </div>
       </div>
     </nav>
@@ -842,4 +842,4 @@ nav.topnav {
 </div>
 
 <dialog id="favoritesDialog" class="favorites-dialog" aria-labelledby="favoritesTitle"><div class="favorites-dialog-head"><div><p class="favorites-eyebrow">YOUR COLLECTION</p><h2 id="favoritesTitle">我的收藏</h2></div><button type="button" id="favoritesClose" aria-label="关闭收藏">✕</button></div><div class="favorites-filters"><label>学科<select id="favoritesCourse"><option value="">全部学科</option><option value="apwh">World History</option><option value="apeuro">Euro History</option><option value="art">Art History</option></select></label><label>搜索<input id="favoritesSearch" type="search" placeholder="标题、地点或关键词"></label></div><p id="favoritesStorage" class="favorites-storage"></p><p id="favoritesResult" role="status" aria-live="polite"></p><div id="favoritesList" class="favorites-list"></div></dialog><p id="favoritesToast" role="status" class="favorites-toast" hidden></p>
-<script type="module" src="shell.mjs?v=20261029-shared-favorites"></script></body></html>
+<script type="module" src="shell.mjs?v=20261107-language-state"></script></body></html>

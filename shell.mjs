@@ -1,3 +1,4 @@
+import {getLanguage,initializeLanguage,moduleLanguageURL,captureCourseState,restoreCourseState,loadCourseTranslations,translate} from './language.mjs?v=20261107-language-state';
 import {createFavoritesStore,favoriteKey} from './favorites.mjs';
 import {mountFavoritesUI} from './favorites-ui.mjs';
 import {message,trustedEvent,safeHeight,courseURL} from './module-protocol.mjs';
@@ -15,6 +16,7 @@ document.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click'
 document.querySelectorAll('[data-scroll]').forEach(el=>el.addEventListener('click',scrollMap));
 let active='world',config,bootFailed=false;
 const states=new Map();
+const resumeByCourse=new Map();
 const frames={world:$('worldCourseFrame'),euro:$('euroCourseFrame'),art:$('artCourseFrame')};
 let favoriteStorage;try{favoriteStorage=localStorage;}catch{}
 const favorites=createFavoritesStore(favoriteStorage);
@@ -29,15 +31,20 @@ function setStatus(text,retry=false){$('moduleStatus').hidden=!text;$('moduleMes
 function start(key,reload=false){
  const spec=config?.modules?.[key];if(!spec)return;
  let state=states.get(key);
- if(state&&!reload){setStatus(state.ready?'':state.failed?'课程暂时未能载入。':'正在加载课程…',state.failed);return;}
+ if(state&&!reload&&state.language===getLanguage()){setStatus(state.ready?'':state.failed?'课程暂时未能载入。':'正在加载课程…',state.failed);return;}
  if(state)clearTimeout(state.timer);
- const url=courseURL(spec.url,location.href);
+ const requestedURL=moduleLanguageURL(spec,getLanguage());
+ if(!requestedURL){setStatus(getLanguage()==='en'?'This course’s English edition is not ready yet.':'课程暂时无法打开。');return;}
+ const url=courseURL(requestedURL,location.href);
  if(!url){setStatus('课程地址配置无效。',true);return;}
  url.searchParams.set('hostOrigin',location.origin);
+ const resume=resumeByCourse.get(key);
+ if(resume?.theme)url.searchParams.set('theme',resume.theme);if(resume?.group)url.searchParams.set('group',resume.group);if(resume?.hash)url.hash=resume.hash;
+ if(getLanguage()==='en')void loadCourseTranslations(url.href);
  // Revalidate each independent course on a fresh load; switching retains existing frames.
  url.searchParams.set('load',String(Date.now()));
  const frame=frames[key];
- state={frame,url,origin:url.origin,module:spec.module,ready:false,failed:false,timer:null,pendingFavorite:state?.pendingFavorite||null};states.set(key,state);
+ state={frame,url,origin:url.origin,module:spec.module,language:getLanguage(),pendingResume:resume||null,ready:false,failed:false,timer:null,pendingFavorite:state?.pendingFavorite||null};states.set(key,state);
  state.timer=setTimeout(()=>{state.failed=true;if(active===key)setStatus('课程暂时未能载入，首页仍可正常使用。',true);},15000);
  frame.onload=()=>frame.contentWindow.postMessage(message(spec.module,'init',{favorites:favorites.forCourse(spec.module)}),url.origin);
  frame.src=url.href;setStatus('正在加载课程…');
@@ -46,12 +53,14 @@ function selectSubject(key){
  active=key;
  document.querySelectorAll('.subj-pill').forEach(p=>{p.classList.toggle('active',p.dataset.subj===key);p.setAttribute('aria-pressed',String(p.dataset.subj===key));});
  Object.entries(frames).forEach(([k,f])=>{f.hidden=k!==key;});
- const live=!!frames[key];$('courseComingSoon').hidden=live;
- $('todayPick').style.display=key==='world'&&$('todayPick').dataset.ready?'block':'none';
+ const available=!frames[key]||getLanguage()!=='en'||!!config?.modules?.[key]?.englishUrl;
+ const live=!!frames[key]&&available;$('courseComingSoon').hidden=live;
+ if(!available&&frames[key])frames[key].hidden=true;
+ $('todayPick').style.display=key==='world'&&$('todayPick').dataset.ready&&$('todayPick').dataset.language===getLanguage()?'block':'none';
  if(live){if(config)start(key);return;}
  setStatus('');
  $('courseComingTitle').textContent=({euro:'Euro History',us:'US History',geo:'Human Geography'})[key]||'Coming soon';
- $('courseComingDescription').textContent=key==='us'?'美国史提供独立地图入口。':'这一科的互动地图正在制作中。';
+ $('courseComingDescription').textContent=!available?'This course’s English edition is being prepared.':key==='us'?'美国史提供独立地图入口。':'这一科的互动地图正在制作中。';
  $('usHistoryLink').hidden=key!=='us';
  if(config)$('usHistoryLink').href=config.usHistoryUrl;
 }
@@ -64,13 +73,14 @@ function renderPick(data){
  pick.append(node('div','tp-eyebrow',data.dateLabel));
  const top=node('div','tp-top','');top.append(node('span','tp-yr',data.year),node('span','tp-city',data.city),node('span','tp-cat',data.category));
  pick.append(top,node('div','tp-trig',data.summary),node('div','tp-cta','在地图上查看这一事件（重置筛选） →'));
- pick.dataset.ready='true';pick.style.display=active==='world'?'block':'none';
+ pick.dataset.ready='true';pick.dataset.language=getLanguage();pick.style.display=active==='world'?'block':'none';
 }
 addEventListener('message',event=>{
  for(const [key,state]of states){
   if(!trustedEvent(event,state.frame.contentWindow,state.origin,state.module,['ready','resize','today-pick','favorites-import','favorite-change','favorite-opened']))continue;
   if(event.data.type==='ready'){
    state.ready=true;state.failed=false;clearTimeout(state.timer);if(active===key)setStatus('');sendFavorites(state);dispatchFavorite(state);
+   if(state.pendingResume){const resume=state.pendingResume;state.pendingResume=null;void restoreCourseState(state.frame,resume,()=>states.get(key)===state);}
   }
   if(event.data.type==='favorites-import'){favorites.import(state.module,event.data.items);return;}
   if(!state.ready)return;
@@ -94,8 +104,6 @@ $('retryModule').addEventListener('click',()=>bootFailed?boot():start(active,tru
 $('todayPick').addEventListener('click',()=>{const state=states.get('world');if(!state?.ready)return;showView('home');selectSubject('world');scrollMap();state.frame.contentWindow.postMessage(message('apwh','open-today'),state.origin);});
 document.querySelectorAll('.subj-pill').forEach(p=>p.addEventListener('click',()=>selectSubject(p.dataset.subj)));
 document.querySelectorAll('.subject-item').forEach(item=>item.addEventListener('click',()=>{showView('home');selectSubject(item.dataset.subject);scrollMap();}));
-let hintTimer;
-document.querySelectorAll('.lang').forEach(el=>el.addEventListener('click',()=>{if(el.dataset.lang!=='en')return;$('langHint').classList.add('show');clearTimeout(hintTimer);hintTimer=setTimeout(()=>$('langHint').classList.remove('show'),2200);}));
 document.querySelectorAll('.navlinks li,.subject-item,.back-link,.feature-clickable,.subj-pill,.today-pick').forEach(el=>{el.tabIndex=0;el.setAttribute('role','button');el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click();}});});
 async function boot(){try{
  bootFailed=false;setStatus('正在加载课程…');
@@ -104,4 +112,4 @@ async function boot(){try{
  const us=new URL(config.usHistoryUrl,location.href);if(us.protocol!=='https:')throw Error('us-url');
  selectSubject(active);
 }catch{bootFailed=true;setStatus('课程配置暂时未能载入，请重试。',true);}}
-void boot();
+void initializeLanguage({onChange:()=>{for(const [key,state]of states){const resume=captureCourseState(state.frame);if(resume)resumeByCourse.set(key,resume);}favoriteUI.render();selectSubject(active);}}).then(boot);

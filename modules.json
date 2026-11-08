@@ -4,7 +4,8 @@
     "world": {
       "module": "apwh",
       "url": "../magic-history-apwh/",
-      "title": "World History"
+      "title": "World History",
+      "englishUrl": "../magic-history-apwh-english/"
     },
     "art": {
       "module": "art",

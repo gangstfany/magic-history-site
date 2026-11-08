@@ -8,7 +8,7 @@ if revision!=release['commit']:raise SystemExit('Account release does not match 
 if subprocess.check_output(['git','-C',str(auth),'status','--porcelain','--untracked-files=no'],text=True).strip():raise SystemExit('Account source has uncommitted changes; refusing to change pinned login code.')
 manifest=json.loads((auth/'auth-manifest.json').read_text())
 out=ROOT/'_site';shutil.rmtree(out,ignore_errors=True);out.mkdir()
-for name in ['index.html','shell.css','shell.mjs','favorites.mjs','favorites-ui.mjs','module-protocol.mjs','modules.json','og-cover.png','assets']:
+for name in ['index.html','shell.css','shell.mjs','favorites.mjs','favorites-ui.mjs','language.mjs','homepage-translations.json','account-translations.json','module-protocol.mjs','modules.json','og-cover.png','assets']:
  source=ROOT/name
  if source.is_dir():shutil.copytree(source,out/name)
  else:shutil.copy2(source,out/name)
